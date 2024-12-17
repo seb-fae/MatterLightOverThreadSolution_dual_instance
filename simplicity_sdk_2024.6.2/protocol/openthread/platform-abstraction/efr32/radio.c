@@ -298,8 +298,8 @@ static otRadioIeInfo sTransmitIeInfo[RADIO_REQUEST_BUFFER_COUNT];
 #define CCA_THRESHOLD_DEFAULT -75 // dBm  - default for 2.4GHz 802.15.4
 
 
-bool tx_aborted[RADIO_REQUEST_BUFFER_COUNT] = { false, false};
-bool tx_busy = false;
+volatile bool tx_aborted[RADIO_REQUEST_BUFFER_COUNT] = { false, false};
+volatile bool tx_busy = false;
 
 #define UNINITIALIZED_CHANNEL 0xFF
 
@@ -1651,6 +1651,10 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     int8_t  txPower = sl_get_tx_power_for_current_channel(aInstance);
     uint8_t iid     = efr32GetIidFromInstance(aInstance);
 
+    CORE_DECLARE_IRQ_STATE;
+    CORE_ENTER_ATOMIC();
+
+    /* Check if a transmit is already ongoing */
     if (tx_busy)
     {
       otPlatRadioTxStarted(aInstance, aFrame);
@@ -1660,6 +1664,8 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     }
 
     tx_busy = true;
+
+    CORE_EXIT_ATOMIC();
 
     otLogInfoPlat("RADIOTX %d", iid);
     // sTransmitBuffer's index 0 corresponds to host 1 i.e. iid 1 and reason is,
@@ -3354,6 +3360,10 @@ static void processTxComplete(otInstance *aInstance)
 
   uint8_t iid = otPlatMultipanInstanceToIid(aInstance) - 1;
 
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_ATOMIC();
+
+  /* Check first if a TX has bee aborted because Radio was already transmitting */
   if(tx_aborted[iid] == true)
   {
     tx_aborted[iid] = false;
@@ -3366,6 +3376,7 @@ static void processTxComplete(otInstance *aInstance)
     return;
   }
 
+  CORE_EXIT_ATOMIC();
 
 
     if (getInternalFlag(RADIO_TX_EVENTS))
@@ -3421,7 +3432,13 @@ static void processTxComplete(otInstance *aInstance)
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelay         = 0;
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
             otLogInfoPlat("RADIOTX DONE %d %d", sCurrentTxPacket->iid, txStatus);
+
+            CORE_DECLARE_IRQ_STATE;
+            CORE_ENTER_ATOMIC();
+
             tx_busy = false;
+
+            CORE_EXIT_ATOMIC();
             otPlatRadioTxDone(otPlatMultipanIidToInstance(sCurrentTxPacket->iid),
                               &sCurrentTxPacket->frame,
                               ackFrame,
