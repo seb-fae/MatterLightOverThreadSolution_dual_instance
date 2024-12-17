@@ -2816,18 +2816,20 @@ static psa_status_t authenticate_its_file(nvm3_ObjectKey_t nvm3_object_id,
  * \retval      PSA_ERROR_HARDWARE_FAILURE       The operation failed because an internal cryptographic operation failed.
  * \retval      PSA_ERROR_INVALID_SIGNATURE      The operation failed because the provided `uid` doesnt match the autenticated uid from the storage
  */
+
 psa_status_t psa_its_set(psa_storage_uid_t uid,
                          uint32_t data_length,
                          const void *p_data,
                          psa_storage_create_flags_t create_flags)
 {
+
+
   if ((data_length != 0U) && (p_data == NULL)) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
   if ((data_length > NVM3_MAX_OBJECT_SIZE)) {
     return PSA_ERROR_STORAGE_FAILURE;
   }
-
   if (create_flags != PSA_STORAGE_FLAG_WRITE_ONCE
       && create_flags != PSA_STORAGE_FLAG_NONE
 #if defined(TFM_CONFIG_SL_SECURE_LIBRARY)

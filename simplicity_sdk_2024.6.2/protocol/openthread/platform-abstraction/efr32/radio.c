@@ -297,6 +297,10 @@ static otRadioIeInfo sTransmitIeInfo[RADIO_REQUEST_BUFFER_COUNT];
 #define CCA_THRESHOLD_UNINIT 127
 #define CCA_THRESHOLD_DEFAULT -75 // dBm  - default for 2.4GHz 802.15.4
 
+
+bool tx_aborted[RADIO_REQUEST_BUFFER_COUNT] = { false, false};
+bool tx_busy = false;
+
 #define UNINITIALIZED_CHANNEL 0xFF
 
 static bool              sPromiscuous = false;
@@ -1646,6 +1650,16 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     otError error   = OT_ERROR_NONE;
     int8_t  txPower = sl_get_tx_power_for_current_channel(aInstance);
     uint8_t iid     = efr32GetIidFromInstance(aInstance);
+
+    if (tx_busy)
+    {
+      otPlatRadioTxStarted(aInstance, aFrame);
+      tx_aborted[iid - 1] = true;
+      otLogInfoPlat("RADIOTX ABORT\n", iid);
+      goto exit;
+    }
+
+    tx_busy = true;
 
     otLogInfoPlat("RADIOTX %d", iid);
     // sTransmitBuffer's index 0 corresponds to host 1 i.e. iid 1 and reason is,
@@ -3274,11 +3288,13 @@ static void processNextRxPacket(otInstance *aInstance)
     // sReceive buffer gets populated from prepareNextRxPacketforCb.
     interfaceId = sReceive.iid;
 
+
     // Submit broadcast packet to all initilized instances.
     do
     {
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
         instance = otPlatMultipanIidToInstance(interfaceId);
+        otLogInfoPlat("RX iid %d, 0x%x", interfaceId, instance);
 #else
         instance = aInstance;
 #endif
@@ -3332,9 +3348,25 @@ static void processRxPackets(otInstance *aInstance)
 
 static void processTxComplete(otInstance *aInstance)
 {
-    OT_UNUSED_VARIABLE(aInstance);
-    otError       txStatus;
-    otRadioFrame *ackFrame = NULL;
+  OT_UNUSED_VARIABLE(aInstance);
+  otError       txStatus;
+  otRadioFrame *ackFrame = NULL;
+
+  uint8_t iid = otPlatMultipanInstanceToIid(aInstance) - 1;
+
+  if(tx_aborted[iid] == true)
+  {
+    tx_aborted[iid] = false;
+    otLogInfoPlat("RADIOTX DONE ABORT %d 11", iid);
+    otPlatRadioTxDone(otPlatMultipanIidToInstance(iid + 1),
+                      &sTransmitBuffer[iid].frame,
+                      ackFrame,
+                      OT_ERROR_ABORT);
+    otSysEventSignalPending();
+    return;
+  }
+
+
 
     if (getInternalFlag(RADIO_TX_EVENTS))
     {
@@ -3388,12 +3420,12 @@ static void processTxComplete(otInstance *aInstance)
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelayBaseTime = 0;
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelay         = 0;
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-            otLogInfoPlat("RADIOTX DONE %d", sCurrentTxPacket->iid);
+            otLogInfoPlat("RADIOTX DONE %d %d", sCurrentTxPacket->iid, txStatus);
+            tx_busy = false;
             otPlatRadioTxDone(otPlatMultipanIidToInstance(sCurrentTxPacket->iid),
                               &sCurrentTxPacket->frame,
                               ackFrame,
                               txStatus);
-
 #else
             otPlatRadioTxDone(aInstance, &sCurrentTxPacket->frame, ackFrame, txStatus);
 #endif

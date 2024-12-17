@@ -48,7 +48,7 @@
 
 #if OPENTHREAD_CONFIG_CRYPTO_LIB == OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
 
-#define PERSISTENCE_KEY_ID_USED_MAX (7)
+#define PERSISTENCE_KEY_ID_USED_MAX (16)
 #define MAX_HMAC_KEY_SIZE (32)
 
 // Helper function to convert otCryptoKeyType to psa_key_type_t

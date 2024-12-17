@@ -21,7 +21,6 @@
 #include "sl_system_kernel.h"
 #include <MatterConfig.h>
 
-
 int main(void)
 {
     sl_system_init();

@@ -27,6 +27,7 @@
     <file name="sl_clock_manager_tree_config.h" generated="true" linked="false"/>
     <file name="sl_openthread_features_config.h" generated="true" linked="false"/>
     <file name="sl_openthread_generic_config.h" generated="true" linked="false"/>
+    <file name="sl_rail_util_dma_config.h" generated="true" linked="false"/>
     <file name="sl_rail_util_pti_config.h" generated="true" linked="false"/>
     <file name="sl_simple_button_btn0_config.h" generated="true" linked="false"/>
     <file name="sl_simple_button_btn1_config.h" generated="true" linked="false"/>
@@ -71,7 +72,6 @@
     <file name="emlib_core_debug_config.h" generated="true" linked="false"/>
     <file name="sl_mbedtls_config.h" generated="true" linked="false"/>
     <file name="sl_mbedtls_device_config.h" generated="true" linked="false"/>
-    <file name="sl_rail_util_dma_config.h" generated="true" linked="false"/>
   </folder>
   <includePath uri="studio:/project/config"/>
   <includePath uri="studio:/project/config/app/icd/server"/>
