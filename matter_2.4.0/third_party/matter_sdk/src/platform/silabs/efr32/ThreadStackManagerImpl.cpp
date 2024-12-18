@@ -84,11 +84,6 @@ ThreadStackManagerImpl ThreadStackManagerImpl::sInstance;
 
 CHIP_ERROR ThreadStackManagerImpl::_InitThreadStack(void)
 {
-  CHIP_ERROR err;
-  if (myOTInstance != NULL)
-    err = InitThreadStack(myOTInstance);
-  if (err != CHIP_NO_ERROR)
-    return err;
   return InitThreadStack(sOTInstance);
 }
 

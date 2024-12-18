@@ -1659,15 +1659,18 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     {
       otPlatRadioTxStarted(aInstance, aFrame);
       tx_aborted[iid - 1] = true;
+#ifdef DEBUG_RADIO
       otLogInfoPlat("RADIOTX ABORT\n", iid);
+#endif
       goto exit;
     }
 
     tx_busy = true;
 
     CORE_EXIT_ATOMIC();
-
+#ifdef DEBUG_RADIO
     otLogInfoPlat("RADIOTX %d", iid);
+#endif
     // sTransmitBuffer's index 0 corresponds to host 1 i.e. iid 1 and reason is,
     // iid zero is reserved for broadcast frames in multipan case.
     uint8_t txBufIndex = iid ? (iid - 1) : 0;
@@ -3367,7 +3370,9 @@ static void processTxComplete(otInstance *aInstance)
   if(tx_aborted[iid] == true)
   {
     tx_aborted[iid] = false;
+#ifdef DEBUG_RADIO
     otLogInfoPlat("RADIOTX DONE ABORT %d 11", iid);
+#endif
     otPlatRadioTxDone(otPlatMultipanIidToInstance(iid + 1),
                       &sTransmitBuffer[iid].frame,
                       ackFrame,
@@ -3431,7 +3436,9 @@ static void processTxComplete(otInstance *aInstance)
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelayBaseTime = 0;
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelay         = 0;
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+#ifdef DEBUG_RADIO
             otLogInfoPlat("RADIOTX DONE %d %d", sCurrentTxPacket->iid, txStatus);
+#endif
 
             CORE_DECLARE_IRQ_STATE;
             CORE_ENTER_ATOMIC();
